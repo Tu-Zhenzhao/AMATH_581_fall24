@@ -1,0 +1,72 @@
+# Homework 2
+
+# given boundary value problem:
+# d^2y/dx^2 - [Kx^2-beta]y = 0
+# where we expect the solution to be y \to 0 as x \to \infty
+# take K = 1, x \in [-4, 4] choose xspan = -4:0.1:4
+# goal: find the first 5 eigenvalues and eigenfunctions
+
+# import libraries
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+
+# initial parameters
+y0 = 0
+xspan = np.linspace(-4, 4, 100)
+K = 1
+tol = 1e-5
+col = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'w', 'orange', 'purple', 'brown']
+x0 = [1e-5, 1e-5]
+init_beta = 1
+
+
+# define the differential equation
+def func(y, x, K, beta):
+    return [y[1], (K * x**2 - beta) * y[0]]
+
+print("Shape of xspan:", xspan.shape)
+
+# eigenvalue list
+eigvals = []
+
+# eigenfunction list
+eigfuncs = []
+
+# loop through different beta
+beta_start = init_beta
+
+for modes in range(5):
+    beta = beta_start
+    dbeta = 1 # initial step size for eigenvalue adjustment
+    # convergence loop for each beta
+    for i in range(1000):
+        # solve the ODE
+        y = odeint(func, x0, xspan, args=(K, beta))
+        # check if the solution is converged
+        print("Last value of y:", y[-1, 0])
+        if np.abs(y[-1, 0]) < tol:
+            eigvals.append(beta)
+            print('Epsilon =', beta)
+            break
+
+        # shooting scheme: check it is greater than 0
+        if y[-1, 0] > 0:
+            beta += dbeta
+        else:
+            beta -= dbeta
+            dbeta *= 0.5
+
+    # finding a eigenvalue then find a new beta
+    beta_start = beta + 2
+    # print 
+    print("Shape of y:", y.shape)
+    # normalization for eigenfunction
+    norm = np.trapz(y[:, 0]*y[:, 0], xspan)
+    # plotting the solution
+    plt.plot(xspan, y[:, 0]/np.sqrt(norm), col[modes], label=r'$\beta$ = ' + str(beta))
+
+plt.legend()
+plt.show()
+
+
