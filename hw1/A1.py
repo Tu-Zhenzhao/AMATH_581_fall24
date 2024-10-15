@@ -29,27 +29,22 @@ x_j = [x0]          # list of f(x_n) values
 acc = [abs(f(x0))]  # list of accuracy values
 
 # Newton Raphson Iteration
-def newtonRaphson(x0):
-    for i in range(max_iter):
-        x1 = x0 - f(x0)/df(x0)
-        x0 = x1
-        x_j.append(x0)
-        acc.append(abs(f(x0)))
-        if abs(f(x0)) < tol:
-            break
-    return x1, x_j, acc
-
+for j in range(max_iter):
+    x_j = np.append(x_j, x0 - f(x0)/df(x0))
+    acc = np.append(acc, abs(f(x0)))
+    if abs(f(x0)) < tol:
+        break
+    x0 = x_j[-1]
 
 
 # output
-x1, x_n, err = newtonRaphson(x0)
+#x1, x_n, err = newtonRaphson(x0)
 #print('Local minima at: ', x1)
 #print('Number of iterations: ', len(x_n))
 #print('Error: ', err[-1])
 # save to numpy vector
-A1 = x_n
-print(x_n)
-print(len(x_n))
+A1 = x_j
+
 
 #print("TABLE:")
 #print("----------")
@@ -116,9 +111,7 @@ init_mid = (x_left + x_right)/2  # initial midpoint
 # iterations table of Bisection
 acc_bi = []        # absolute value of f(x)
 mid = []        # mid point
-# iterations table of Newton Raphson
-x_j = []        # value of x
-acc_nr = []        # absolute value of f(x)
+
 
 
 # function
@@ -146,22 +139,13 @@ def bisection(x_left, x_right):
     return x_mid, mid, acc_bi
 
 
-# Newton Raphson
-def newtonRaphson(x0):
-    for i in range(max_iter):
-        x1 = x0 - f(x0)/df(x0)
-        x0 = x1
-        x_j.append(x0)
-        acc_nr.append(abs(f(x0)))
-        if abs(f(x0)) < tol:
-            break
-    return x1, x_j, acc_nr
+
 
 
 # output for bisection
 x_mid, mid, acc = bisection(x_left, x_right)
-x1, x_j, acc = newtonRaphson(x0)
-A3 = np.array([len(acc_nr), len(acc_bi)])
+A3 = np.array([len(x_j[1:]), len(acc_bi)])
+print(A3)
 
 
 
@@ -174,13 +158,14 @@ B = np.array([[2, 0], [0, 2]])
 A4 = A + B
 
 # matrices
-x = np.array([1, 1])
+x = np.array([1, 0])
 y = np.array([0, 1])
 A5 = 3*x - 4*y
 
 
+
 # matrices
-x = np.array([[1], [1]])
+x = np.array([[1], [0]])
 A = np.array([[1, 2], [-1, 1]])
 A6 = (A @ x).reshape(2,)
 

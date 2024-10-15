@@ -13,11 +13,11 @@ from scipy.integrate import odeint
 
 # initial parameters
 y0 = 0
-xspan = np.linspace(-4, 4, 100)
+xspan = np.linspace(-4, 4, 81)
 K = 1
 tol = 1e-5
 col = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'w', 'orange', 'purple', 'brown']
-x0 = [1e-5, 1e-5]
+x0 = [1, np.sqrt(K*4**2-0)]
 init_beta = 1
 
 
@@ -48,24 +48,36 @@ for modes in range(5):
         if np.abs(y[-1, 0]) < tol:
             eigvals.append(beta)
             print('Epsilon =', beta)
+            print("Last value of y:", y[-1, 0])
             break
 
         # shooting scheme: check it is greater than 0
-        if y[-1, 0] > 0:
-            beta += dbeta
-        else:
+        if (-1) ** (modes + 1) * y[-1, 0] > 0:
             beta -= dbeta
+        else:
+            beta += dbeta
             dbeta *= 0.5
 
     # finding a eigenvalue then find a new beta
-    beta_start = beta + 2
+    beta_start = beta + 0.1
     # print 
     print("Shape of y:", y.shape)
     # normalization for eigenfunction
     norm = np.trapz(y[:, 0]*y[:, 0], xspan)
+    # append eigenfunction make it to 5 column matrix
+    eigfuncs.append(np.abs(y[:, 0])/np.sqrt(norm))
     # plotting the solution
     plt.plot(xspan, y[:, 0]/np.sqrt(norm), col[modes], label=r'$\beta$ = ' + str(beta))
 
+# trans eigenvalue to 1*5 matrix
+A2 = np.array(eigvals).reshape(1, 5)
+# trans eigenfunction to 100*5 matrix
+A1 = np.array(eigfuncs).T
+# print
+#print("Eigenvalues:", eigvals.shape)
+#print("Eigenfunctions:", eigfuncs.shape)
+print(A1.shape)
+print(A1)
 plt.legend()
 plt.show()
 
