@@ -17,7 +17,6 @@ xspan = np.linspace(-4, 4, 81)
 K = 1
 tol = 1e-5
 col = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'w', 'orange', 'purple', 'brown']
-x0 = [1, np.sqrt(K*4**2-0)]
 init_beta = 1
 
 
@@ -41,18 +40,21 @@ for modes in range(5):
     dbeta = 1 # initial step size for eigenvalue adjustment
     # convergence loop for each beta
     for i in range(1000):
+        x0 = [1, np.sqrt(K*4**2-beta)*1]
         # solve the ODE
         y = odeint(func, x0, xspan, args=(K, beta))
         # check if the solution is converged
+
+        err = y[-1,1] + np.sqrt(K*4**2-beta)*y[-1,0]
         print("Last value of y:", y[-1, 0])
-        if np.abs(y[-1, 0]) < tol:
+        if np.abs(err) < tol:
             eigvals.append(beta)
             print('Epsilon =', beta)
             print("Last value of y:", y[-1, 0])
             break
 
         # shooting scheme: check it is greater than 0
-        if (-1) ** (modes + 1) * y[-1, 0] > 0:
+        if (-1) ** (modes + 1) * err > 0:
             beta -= dbeta
         else:
             beta += dbeta
