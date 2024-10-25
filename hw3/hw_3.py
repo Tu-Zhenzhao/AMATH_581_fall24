@@ -1,85 +1,81 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.linalg import eigh_tridiagonal
 
 # Parameters
-L = 4  # Domain limit
-dx = 0.1  # Grid spacing
-K = 1  # Constant in the differential equation
-
-# Spatial grid
+L = 4
+dx = 0.1
+K = 1
 xspan = np.arange(-L, L + dx, dx)
-N = len(xspan)
-x = xspan
+N_total = len(xspan)
+print("Total number of points:", N_total)
+N = N_total - 2  # Number of interior points
+x_i = xspan[1:-1]  # Interior points
 
-# Potential term
-V = K * x**2
+# Initialize the matrix A
+A = np.zeros((N, N))
 
-# Construct the tridiagonal matrix H
-# Main diagonal
-d = np.zeros(N)
-# Off-diagonal
-e = np.ones(N - 1) * (-1) / dx**2
+# Off-diagonal entries
+E = 1 * np.ones(N - 1)
 
-# Fill the main diagonal with appropriate values
-for i in range(N):
-    if i == 0:
-        # Forward differencing at the first point
-        # Adjust diagonal element using the hint
-        approx_epsilon = K * L**2
-        d[i] = (3 + 2 * dx * np.sqrt(K * L**2 - approx_epsilon)) / dx**2 + V[i]
-    elif i == N - 1:
-        # Backward differencing at the last point
-        # Adjust diagonal element using the hint
-        approx_epsilon = K * L**2
-        d[i] = (3 + 2 * dx * np.sqrt(K * L**2 - approx_epsilon)) / dx**2 + V[i]
-    else:
-        # Interior points
-        d[i] = 2 / dx**2 + V[i]
+# Main diagonal entries
+D = -2 - dx**2 * K * x_i**2
 
-# Adjust the first and last elements due to boundary conditions
-# Since ψ(−L) = ψ(L) = 0, we exclude the first and last points
-d_interior = d[1:-1]
-e_interior = e[1:-1]
+# Construct the tridiagonal matrix A
+A = np.diag(D) + np.diag(E, k=-1) + np.diag(E, k=1)
+print("Matrix A before modifications:\n", A)
+# Modify the first row (forward differencing)
+A[0, 0] += 4/3
+A[0, 1] -= 1/3
 
+# Modify the last row (backward differencing)
+A[N-1, N-2] -=  1/3
+A[N-1, N-1] += 4/3
+print("Matrix A after modifications:\n", A)
+print("Eigenvalue problem size:", A.shape)
 # Solve the eigenvalue problem
-eigenvalues, eigenvectors = eigh_tridiagonal(d_interior, e_interior)
+eigenvalues, eigenvectors = np.linalg.eigh(-A)
+# Sort eigenvalues and eigenvectors
+final_eigenvalues =eigenvalues[:5]/(dx**2)
+print("Eigenvalues:\n", final_eigenvalues)
 
-# Select the first five eigenvalues and eigenvectors
-epsilon_n = eigenvalues[:5]
-psi_n = eigenvectors[:, :5]
 
-# Include boundary points (set to zero due to boundary conditions)
-psi_n_full = np.zeros((N, 5))
-psi_n_full[1:-1, :] = psi_n
+# Extract the first five eigenvalues and eigenvectors
+eigenvalues = eigenvalues[:5]
+eigenvectors = eigenvectors[:, :5]
+print("Eigenvectors:\n", eigenvectors.shape)
 
-# Normalize the eigenfunctions
-phi_n = np.zeros_like(psi_n_full)
+# Include boundary points in eigenfunctions
+eigenfunctions = np.zeros([N_total, 5])
+
+# Normalize the eigenfunctions and take absolute values
 for i in range(5):
-    norm = np.sqrt(np.trapz(np.abs(psi_n_full[:, i])**2, x))
-    phi_n[:, i] = psi_n_full[:, i] / norm
+    eigenvector = eigenvectors[:, i]
+    print("Eigenvector:", eigenvector.shape)
 
-# Take the absolute value of the eigenfunctions
-phi_n_abs = np.abs(phi_n)
+    # adding boundary conditions
+    phi0 = 4/3 * eigenvector[0]  - 1/3 * eigenvector[1]
+    phiN = 4/3 * eigenvector[N-1] - 1/3 * eigenvector[N-2]
+
+    # construct the full eigenfunction
+    eigenfunctions[:, i] = np.concatenate(([phi0], eigenvector, [phiN]))
+
+    norm = np.trapz(eigenfunctions[:, i]**2, xspan)
+    eigenfunctions[:, i] /= np.sqrt(norm)
+    eigenfunctions[:, i] = np.abs(eigenfunctions[:, i])
 
 # Save the eigenfunctions and eigenvalues
-A1 = phi_n_abs  # Eigenfunctions matrix (columns correspond to φₙ)
-A2 = epsilon_n  # Eigenvalues vector
-
-# Print the eigenvalues
-print("Eigenvalues (εₙ):", A2)
-# print the matrix
-print("Matrix e", d)
-print("D interior", d_interior)
-print("E interior", e_interior)
+A1 = eigenfunctions  # 5-column matrix of eigenfunctions
+A2 = final_eigenvalues         # 1x5 vector of eigenvalues
 
 # Plot the eigenfunctions
-plt.figure(figsize=(10, 6))
 for i in range(5):
-    plt.plot(x, phi_n[:, i], label=f'ϕ_{i+1} (ε={epsilon_n[i]:.4f})')
-plt.title('First Five Normalized Eigenfunctions of the Harmonic Oscillator')
-plt.xlabel('x')
-plt.ylabel('ϕₙ(x)')
+    plt.plot(xspan, eigenfunctions[:, i], label=f'eigenvalue {i+1}: {A2[i]:.2f}')
 plt.legend()
-plt.grid()
+plt.xlabel('x')
+plt.ylabel('Normalized |ϕ_n(x)|')
+plt.title('First Five Normalized Eigenfunctions with Modified Boundary Conditions')
 plt.show()
+
+# Display the eigenvalues
+print("Eigenvalues (ε_n):", A2)
+print("Eigenfunctions (ϕ_n):\n", A1)
