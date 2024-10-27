@@ -1,100 +1,206 @@
+
+# coding: utf-8
+
+# In[1]:
+
+
+from __future__ import division
 import numpy as np
-from scipy.integrate import solve_ivp
-from scipy.optimize import root_scalar
+import scipy
+from scipy import integrate
+from numpy import linalg as LA
+
+
 import matplotlib.pyplot as plt
 
-# Parameters
-L = 2
-K = 1
-xspan = np.linspace(0, L, 41)  # From 0 to L with 41 points (step size 0.1)
-gammas = [0.05, -0.05]  # Gamma values
-modes = ['even', 'odd']  # Modes to compute
 
-def nonlinear_ode(x, y, gamma, epsilon):
-    """
-    Defines the nonlinear differential equation.
-    """
-    y1, y2 = y
-    dy1dx = y2
-    dy2dx = - (epsilon - gamma * np.abs(y1)**2 - K * x**2) * y1
-    return [dy1dx, dy2dx]
+# In[2]:
 
-def shoot(gamma, mode, epsilon_guess):
-    """
-    Performs the shooting method to find the eigenvalue epsilon.
-    """
-    # Initial conditions based on mode
-    if mode == 'even':
-        y0 = [1.0, 0.0]  # y(0) = 1, y'(0) = 0
-    elif mode == 'odd':
-        y0 = [0.0, 1.0]  # y(0) = 0, y'(0) = 1
-    else:
-        raise ValueError("Mode must be 'even' or 'odd'.")
 
-    # Objective function for root finding
-    def objective(epsilon):
-        sol = solve_ivp(
-            nonlinear_ode, [0, L], y0, args=(gamma, epsilon),
-            t_eval=xspan, rtol=1e-6, atol=1e-8
-        )
-        y_end = sol.y[0, -1]  # y at x = L
-        return y_end
+#import custom functions
+#harmonic is assignment function
+#sol_frame indexes array same as matlab
 
-    # Find epsilon using root finding
-    sol = root_scalar(
-        objective, bracket=[epsilon_guess - 5, epsilon_guess + 5],
-        method='bisect', xtol=1e-6
-    )
 
-    if not sol.converged:
-        raise RuntimeError("Root finding did not converge.")
 
-    epsilon_found = sol.root
 
-    # Solve ODE with found epsilon
-    sol = solve_ivp(
-        nonlinear_ode, [0, L], y0, args=(gamma, epsilon_found),
-        t_eval=xspan, rtol=1e-6, atol=1e-8
-    )
+# In[15]:
 
-    # Construct full solution using symmetry
-    if mode == 'even':
-        x_full = np.concatenate((-sol.t[::-1], sol.t[1:]))
-        y_full = np.concatenate((sol.y[0][::-1], sol.y[0][1:]))
-    else:
-        x_full = np.concatenate((-sol.t[::-1], sol.t[1:]))
-        y_full = np.concatenate((-sol.y[0][::-1], sol.y[0][1:]))
 
-    # Normalize the eigenfunction
-    norm = np.trapz(np.abs(y_full)**2, x_full)
-    y_normalized = np.abs(y_full) / np.sqrt(norm)
+#define constants
+tol = 10**-4
+k = 1
+xp = [-2,2]
+A_start = 1
+A = A_start
 
-    return epsilon_found, x_full, y_normalized
+En_start = k
+En = En_start
 
-# Main computation
-for gamma in gammas:
-    print(f"Computing for gamma = {gamma}")
-    eigenvalues = []
-    eigenfunctions = []
+#define x range for eig_funct
+dx=0.1
+x_frame = np.arange(xp[0],xp[1]+dx,dx)
 
-    for mode, epsilon_guess in zip(modes, [1.0, 4.0]):
-        epsilon, x, y_norm = shoot(gamma, mode, epsilon_guess)
-        eigenvalues.append(epsilon)
-        eigenfunctions.append(y_norm)
+eig_funct = []
+eig_vals = []
 
-        # Plotting the eigenfunction
-        plt.plot(x, y_norm, label=f'{mode.capitalize()} Mode, ε = {epsilon:.6f}')
 
-    plt.title(f'Normalized Modes for γ = {gamma}')
-    plt.xlabel('x')
-    plt.ylabel('Normalized |ϕ|')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+#set up function
+def nonlinear_harmonic(y, t, param):
+    k, En, gamma = param
 
-    # Save the eigenfunctions and eigenvalues
-    eigenfunctions_matrix = np.column_stack(eigenfunctions)
-    eigenvalues_vector = np.array(eigenvalues)
+    y1 = y[1]
+    y2 = ((gamma*y[0]**3)+(k-En))*y[0]
+    return [y1, y2]
 
-    print("Eigenvalues:", eigenvalues_vector)
-    print("Eigenfunctions matrix shape:", eigenfunctions_matrix.shape)
+
+count = 0 
+gamma = 0.05
+
+#loop through A
+for i in range (1,10):
+    dA = 0.1
+    A = A + dA
+    
+    for i in range(1,2):
+        dEn = k/100
+        En = En + dEn
+        #loop through and find solution
+        for j in range(1, 1000):
+
+            #reset En
+            y0 = [0,A]
+            p = [k, En, gamma]
+            #solve ODE
+            sol = integrate.odeint(nonlinear_harmonic, y0, x_frame, args=(p,))
+
+            #pull end value
+            end = len(sol)
+            end_val = sol[end-1:end, 0:1]
+
+            #check if solution is within tolerance
+            if abs(end_val) < tol:
+                En
+                count = count + 1
+                break;
+
+            if i % 2 == 0:
+                if end_val < 0:
+                    En = En+dEn
+                else:
+                    En = En-dEn/2
+                    dEn = dEn/2
+            else:
+                if end_val > 0:
+                    En = En+dEn
+                else:
+                    En = En-dEn/2
+                    dEn = dEn/2
+
+        y1a = sol[:,0:1]
+        y2a = sol[:,1:2]
+
+        #append eigen function to list
+        eig_funct.append(y1a)
+        #append Eigen value
+        eig_vals.append(En)
+            
+    if count > 1:
+        break;
+        
+#write out solution of asbsolute value eigen funtions
+A13 = abs(eig_funct[0])
+A13 = A13 / np.trapz(A13, axis=-0, dx=dx)
+
+
+A14 = abs(eig_funct[1])
+A14 = A14 / np.trapz(A14, axis=-0, dx=dx)
+
+
+eig1 = eig_vals[0] #/ np.trapz(A1, axis=-0, dx=dx)
+eig2 = eig_vals[1] #/ np.trapz(A2, axis=-0, dx=dx)
+
+A15 = np.r_[eig1,eig2]
+
+print(f"eigenvalues: {eig1}, {eig2}")
+plt.plot(x_frame, A13, label = f"eigenvalue = {eig1}")
+plt.plot(x_frame, A14, label = f"eigenvalue = {eig2}")
+plt.legend()
+plt.show()
+
+
+# In[ ]:
+
+
+count = 0 
+gamma = -0.05
+
+#loop through A
+for i in range (1,10):
+    dA = 0.1
+    A = A + dA
+    
+    for i in range(1,2):
+        dEn = k/100
+        En = En + dEn
+        #loop through and find solution
+        for j in range(1, 1000):
+
+            #reset En
+            y0 = [0,A]
+            p = [k, En, gamma]
+            #solve ODE
+            sol = integrate.odeint(nonlinear_harmonic, y0, x_frame, args=(p,))
+
+            #pull end value
+            end = len(sol)
+            end_val = sol[end-1:end, 0:1]
+
+            #check if solution is within tolerance
+            if abs(end_val) < tol:
+                En
+                count = count + 1
+                break;
+
+            if i % 2 == 0:
+                if end_val < 0:
+                    En = En+dEn
+                else:
+                    En = En-dEn/2
+                    dEn = dEn/2
+            else:
+                if end_val > 0:
+                    En = En+dEn
+                else:
+                    En = En-dEn/2
+                    dEn = dEn/2
+
+        y1a = sol[:,0:1]
+        y2a = sol[:,1:2]
+
+        #append eigen function to list
+        eig_funct.append(y1a)
+        #append Eigen value
+        eig_vals.append(En)
+            
+    if count > 1:
+        break;
+        
+#write out solution of asbsolute value eigen funtions
+A16 = abs(eig_funct[2])
+A16 = A16 / np.trapz(A16, axis=-0, dx=dx)
+np.savetxt('A16.dat', A16)
+
+A17 = abs(eig_funct[3])
+A17 = A17 / np.trapz(A17, axis=-0, dx=dx)
+np.savetxt('A17.dat', A17)
+
+eig1 = eig_vals[2]
+eig2 = eig_vals[3]
+
+print(f"eigenvalues \gamma 2: {eig1}, {eig2}")
+plt.plot(x_frame, A16, label = f"eigenvalue = {eig1}")
+plt.plot(x_frame, A17, label = f"eigenvalue = {eig2}")
+plt.legend()
+plt.show()
+
