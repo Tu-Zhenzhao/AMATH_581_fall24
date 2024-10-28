@@ -24,7 +24,7 @@ init_beta = 1
 def func(y, x, K, beta):
     return [y[1], (K * x**2 - beta) * y[0]]
 
-print("Shape of xspan:", xspan.shape)
+#print("Shape of xspan:", xspan.shape)
 
 # eigenvalue list
 eigvals = []
@@ -46,11 +46,11 @@ for modes in range(5):
         # check if the solution is converged
 
         err = y[-1,1] + np.sqrt(K*4**2-beta)*y[-1,0]
-        print("Last value of y:", y[-1, 0])
+        #print("Last value of y:", y[-1, 0])
         if np.abs(err) < tol:
             eigvals.append(beta)
-            print('Epsilon =', beta)
-            print("Last value of y:", y[-1, 0])
+            #print('Epsilon =', beta)
+            #print("Last value of y:", y[-1, 0])
             break
 
         # shooting scheme: check it is greater than 0
@@ -63,7 +63,7 @@ for modes in range(5):
     # finding a eigenvalue then find a new beta
     beta_start = beta + 0.1
     # print 
-    print("Shape of y:", y.shape)
+    #print("Shape of y:", y.shape)
     # normalization for eigenfunction
     norm = np.trapz(y[:, 0]*y[:, 0], xspan)
     # append eigenfunction make it to 5 column matrix
@@ -71,16 +71,17 @@ for modes in range(5):
     # plotting the solution
     plt.plot(xspan, y[:, 0]/np.sqrt(norm), col[modes], label=r'$\beta$ = ' + str(beta))
 
-# trans eigenvalue to 1*5 matrix
-A2 = np.array(eigvals).reshape(1, 5)
+# trans eigenvalue to 1 by 5 matrix
+A2 = np.array(eigvals)
 # trans eigenfunction to 100*5 matrix
 A1 = np.array(eigfuncs).T
 # print
 #print("Eigenvalues:", eigvals.shape)
 #print("Eigenfunctions:", eigfuncs.shape)
-print(A1.shape)
-print(A1)
+#print(A1.shape)
+#print(A2.shape)
 plt.legend()
 plt.show()
+
 
 

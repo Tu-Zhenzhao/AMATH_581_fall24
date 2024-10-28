@@ -11,13 +11,14 @@ def rhsfunc2(t, y, eps, gam):
     f2 = (gam*abs(y[0])**2 + t**2 - eps)*y[0]
     return np.array([f1, f2])
 
-xp = [-3, 3]
+L = 2
+xp = [-L, L]
 tol = 1e-5
 A = 1e-3
 
-x_evals3 = np.linspace(-3, 3, 61)
+x_evals3 = np.linspace(-L, L, L*10 + 1)
 eigenvalues3 = np.zeros(4)
-eigenfunctions3 = np.zeros([61, 4])
+eigenfunctions3 = np.zeros([L*10 + 1, 4])
 
 for i, gamma in enumerate([0.05, -0.05]):
     eps_start = 0
@@ -54,7 +55,7 @@ for i, gamma in enumerate([0.05, -0.05]):
             
         eps_start = eps + 0.1
 
-        plt.plot(x_evals3, abs(eigenfunctions3[:, mode + 2*i]), label=f'{mode} Mode, ε = {eigenvalues3[mode + 2*i]:.2f}')
+        plt.plot(x_evals3, eigenfunctions3[:, mode + 2*i], label=f'{mode} Mode, ε = {eigenvalues3[mode + 2*i]:.2f}')
 
 plt.legend()
 plt.xlabel('x')
