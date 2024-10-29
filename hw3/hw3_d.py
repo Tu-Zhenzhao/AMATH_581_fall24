@@ -40,14 +40,14 @@ slopes = []
 plt.figure()
 for method in methods:
     avg_steps = avg_step_sizes[method]
-    log_avg_steps = np.log10(avg_steps)
-    log_tols = np.log10(tolerances)
+    log_avg_steps = np.log(avg_steps)
+    log_tols = np.log(tolerances)
     # Fit a line to the data
-    slope, intercept = np.polyfit(log_tols, log_avg_steps, 1)
+    slope, intercept = np.polyfit(log_avg_steps ,log_tols,  1)
     slopes.append(slope)
     # Plot the data and the fitted line
-    plt.plot(log_tols, log_avg_steps, 'o-', label=f'{method} (slope={slope:.2f})')
-    plt.plot(log_tols, slope * log_tols + intercept, '--')
+    plt.plot( log_avg_steps, log_tols, 'o-', label=f'{method} (slope={slope:.4f})')
+    #plt.plot(log_tols, slope * log_tols + intercept, '--')
 
 plt.xlabel('log10(Tolerance)')
 plt.ylabel('log10(Average Step Size)')

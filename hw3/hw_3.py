@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 # Parameters
 L = 4
 dx = 0.1
@@ -33,15 +34,17 @@ A[N-1, N-1] += 4/3
 print("Matrix A after modifications:\n", A)
 print("Eigenvalue problem size:", A.shape)
 # Solve the eigenvalue problem
-eigenvalues, eigenvectors = np.linalg.eigh(-A)
+eigenvalues, eigenvectors = np.linalg.eig(-A)
 # Sort eigenvalues and eigenvectors
+idx = eigenvalues.argsort()
+eigenvalues = eigenvalues[idx]
 final_eigenvalues =eigenvalues[:5]/(dx**2)
 print("Eigenvalues:\n", final_eigenvalues)
 
 
 # Extract the first five eigenvalues and eigenvectors
 eigenvalues = eigenvalues[:5]
-eigenvectors = eigenvectors[:, :5]
+eigenvectors = eigenvectors[:, idx][:, :5]
 print("Eigenvectors:\n", eigenvectors.shape)
 
 # Include boundary points in eigenfunctions
