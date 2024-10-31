@@ -1,74 +1,53 @@
 import numpy as np
 from scipy.integrate import simps
 
-# Define Hermite polynomials H_n(x) using recursion
-def hermite_poly(n, x):
-    """Compute the Hermite polynomial H_n(x) recursively."""
-    if n == 0:
-        return np.ones_like(x)  # H_0(x) = 1
-    elif n == 1:
-        return 2 * x  # H_1(x) = 2x
-    else:
-        H_nm1 = hermite_poly(n - 1, x)  # H_{n-1}(x)
-        H_nm2 = hermite_poly(n - 2, x)  # H_{n-2}(x)
-        return 2 * x * H_nm1 - 2 * (n - 1) * H_nm2  # Recurrence relation
 
-# Set parameters
-L = 4  # Domain limit for x
-xspan = np.linspace(-L, L, 81)  # x values for numerical solutions
 
-# Compute exact Gauss-Hermite eigenfunctions
-exact_funcs = []
-for n in range(5):
-    Hn = hermite_poly(n, xspan)  # Compute H_n(x)
-    norm = np.sqrt(simps(Hn**2, xspan))  # Normalize the function
-    exact_funcs.append(np.abs(Hn) / norm)
-exact_funcs = np.array(exact_funcs).T
+# Parameters
+K = 1
+L = 4                     
+xp = [-L, L] 
+xshoot = np.linspace(xp[0], xp[1], 81)
+n = len(xshoot)
 
-# Exact eigenvalues for comparison (n + 0.5 for Hermite polynomials)
-exact_eigenvalues = np.array([n + 0.5 for n in range(5)])
+# hardcode H
+h = np.array([np.ones_like(xshoot), 2*xshoot, 4*xshoot**2-2 , 8*xshoot**3-12*xshoot, 16 * xshoot**4 - 48 * xshoot**2 + 12])
+
+
+# Calculate exact eigenfunctions
+phi = np.zeros([n, 5])
+for j in range(5):
+    # Fixed: Use j instead of n in calculate_hermite
+    phi[:, j] = (np.exp(-xshoot**2/2) * h[j] / np.sqrt(2**j * np.math.factorial(j) * np.sqrt(np.pi))).T
+
+
+# Initialize error arrays                                                 
+err_psi_a = np.zeros(5)
+err_psi_b = np.zeros(5)
+err_a = np.zeros(5)
+err_b = np.zeros(5)
 
 # Load numerical solutions (from part (a) and (b))
-A1_a = np.load('A1_a.npy')  # Eigenfunctions from part (a)
-A2_a = np.load('A2_a.npy')  # Eigenvalues from part (a)
+eigvec_a = np.load('A1_a.npy')  # Eigenfunctions from part (a)
+eigval_a = np.load('A2_a.npy')  # Eigenvalues from part (a)
 
-A1_b = np.load('A1_b.npy')  # Eigenfunctions from part (b)
-A2_b = np.load('A2_b.npy')  # Eigenvalues from part (b)
+eigvec_b = np.load('A1_b.npy')  # Eigenfunctions from part (b)
+eigval_b = np.load('A2_b.npy')  # Eigenvalues from part (b)
 
-# Error computation for eigenfunctions
-err_funcs_a = np.zeros(5)
-err_funcs_b = np.zeros(5)
-
+# Calculate errors
 for j in range(5):
-    diff_a = np.abs(A1_a[:, j] - exact_funcs[:, j])
-    diff_b = np.abs(A1_b[:, j] - exact_funcs[:, j])
-    
-    # Compute L2 norm of the difference
-    err_funcs_a[j] = np.sqrt(simps(diff_a**2, xspan))
-    err_funcs_b[j] = np.sqrt(simps(diff_b**2, xspan))
+    # Fixed: Changed xspan to xshoot
+    err_psi_a[j] = simps((np.abs(eigvec_a[:, j]) - np.abs(phi[:, j]))**2, xshoot)
+    err_psi_b[j] = simps((np.abs(eigvec_b[:, j]) - np.abs(phi[:, j]))**2, xshoot)
+    err_a[j] = 100 * np.abs(eigval_a[j] - (2*j + 1)) / (2*j + 1)  # Fixed: Changed (2*j-1) to (2*j+1)
+    err_b[j] = 100 * np.abs(eigval_b[j] - (2*j + 1)) / (2*j + 1)  # Fixed: Changed (2*j-1) to (2*j+1)
 
-# Error computation for eigenvalues (relative percent error)
-err_vals_a = 100 * np.abs(A2_a - exact_eigenvalues) / exact_eigenvalues
-err_vals_b = 100 * np.abs(A2_b - exact_eigenvalues) / exact_eigenvalues
+A10 = err_psi_a
+A11 = err_a
+A12 = err_psi_b  # Fixed: Changed err_psi_a to err_psi_b
+A13 = err_b
 
-# Display results
-print("Eigenfunction Errors (a):", err_funcs_a)
-print("Eigenfunction Errors (b):", err_funcs_b)
-
-print("Eigenvalue Errors (a):", err_vals_a)
-print("Eigenvalue Errors (b):", err_vals_b)
-
-# Optional: Plotting the exact and numerical eigenfunctions for comparison
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(12, 6))
-for i in range(5):
-    plt.plot(xspan, exact_funcs[:, i], label=f'Exact H_{i}(x)')
-    plt.plot(xspan, A1_a[:, i], '--', label=f'Numerical (a) Mode {i+1}')
-    plt.plot(xspan, A1_b[:, i], ':', label=f'Numerical (b) Mode {i+1}')
-
-plt.legend()
-plt.xlabel('x')
-plt.ylabel('Normalized |ϕ_n(x)|')
-plt.title('Comparison of Exact and Numerical Eigenfunctions')
-plt.show()
+print("Error in wavefunctions (method a):", A10)
+print("Error in eigenvalues (method a):", A11)
+print("Error in wavefunctions (method b):", A12)
+print("Error in eigenvalues (method b):", A13)
