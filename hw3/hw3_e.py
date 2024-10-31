@@ -1,63 +1,74 @@
-# error_analysis.py
-# Error Analysis for Homework 2
-
 import numpy as np
-from scipy.special import hermite
 from scipy.integrate import simps
 
-# Load numerical eigenvalues and eigenfunctions from parts (a) and (b)
-# Part (a)
-A1_a = np.load('A1_a.npy')      # Eigenfunctions from part (a)
-A2_a = np.load('A2_a.npy')      # Eigenvalues from part (a)
-xspan_a = np.load('xspan_a.npy')
+# Define Hermite polynomials H_n(x) using recursion
+def hermite_poly(n, x):
+    """Compute the Hermite polynomial H_n(x) recursively."""
+    if n == 0:
+        return np.ones_like(x)  # H_0(x) = 1
+    elif n == 1:
+        return 2 * x  # H_1(x) = 2x
+    else:
+        H_nm1 = hermite_poly(n - 1, x)  # H_{n-1}(x)
+        H_nm2 = hermite_poly(n - 2, x)  # H_{n-2}(x)
+        return 2 * x * H_nm1 - 2 * (n - 1) * H_nm2  # Recurrence relation
 
-# Part (b)
-A1_b = np.load('A1_b.npy')      # Eigenfunctions from part (b)
-A2_b = np.load('A2_b.npy')      # Eigenvalues from part (b)
-xspan_b = np.load('xspan_b.npy')
+# Set parameters
+L = 4  # Domain limit for x
+xspan = np.linspace(-L, L, 81)  # x values for numerical solutions
 
-# Parameters
-K = 1
-n_values = np.arange(5)  # n = 0 to 4
+# Compute exact Gauss-Hermite eigenfunctions
+exact_funcs = []
+for n in range(5):
+    Hn = hermite_poly(n, xspan)  # Compute H_n(x)
+    norm = np.sqrt(simps(Hn**2, xspan))  # Normalize the function
+    exact_funcs.append(np.abs(Hn) / norm)
+exact_funcs = np.array(exact_funcs).T
 
-# Compute exact eigenvalues
-beta_exact = 2 * n_values + 1  # Since K = 1
+# Exact eigenvalues for comparison (n + 0.5 for Hermite polynomials)
+exact_eigenvalues = np.array([n + 0.5 for n in range(5)])
 
-# Function to compute exact eigenfunctions
-def compute_exact_eigenfunctions(xspan):
-    eigenfunctions_exact = []
-    for n in n_values:
-        Hn = hermite(n)
-        psi_n = Hn(xspan) * np.exp(-xspan**2 / 2)
-        # Normalize the eigenfunction over the interval
-        norm = np.sqrt(simps(psi_n**2, xspan))
-        psi_n_normalized = np.abs(psi_n) / norm
-        eigenfunctions_exact.append(psi_n_normalized)
-    return np.array(eigenfunctions_exact).T  # Shape: [number of x points, 5]
+# Load numerical solutions (from part (a) and (b))
+A1_a = np.load('A1_a.npy')  # Eigenfunctions from part (a)
+A2_a = np.load('A2_a.npy')  # Eigenvalues from part (a)
 
-# Compute exact eigenfunctions for parts (a) and (b)
-eigenfunctions_exact_a = compute_exact_eigenfunctions(xspan_a)
-eigenfunctions_exact_b = compute_exact_eigenfunctions(xspan_b)
+A1_b = np.load('A1_b.npy')  # Eigenfunctions from part (b)
+A2_b = np.load('A2_b.npy')  # Eigenvalues from part (b)
 
-# Function to compute the norm of the difference between numerical and exact eigenfunctions
-def compute_eigenfunction_error(numerical, exact, xspan):
-    error = []
-    for i in range(5):
-        diff = numerical[:, i] - exact[:, i]
-        norm = np.sqrt(simps(diff**2, xspan))
-        error.append(norm)
-    return np.array(error)
+# Error computation for eigenfunctions
+err_funcs_a = np.zeros(5)
+err_funcs_b = np.zeros(5)
 
-# Compute errors for part (a)
-eigenfunction_error_a = compute_eigenfunction_error(A1_a, eigenfunctions_exact_a, xspan_a)
-eigenvalue_error_a = 100 * np.abs(A2_a - beta_exact) / beta_exact
+for j in range(5):
+    diff_a = np.abs(A1_a[:, j] - exact_funcs[:, j])
+    diff_b = np.abs(A1_b[:, j] - exact_funcs[:, j])
+    
+    # Compute L2 norm of the difference
+    err_funcs_a[j] = np.sqrt(simps(diff_a**2, xspan))
+    err_funcs_b[j] = np.sqrt(simps(diff_b**2, xspan))
 
-# Compute errors for part (b)
-eigenfunction_error_b = compute_eigenfunction_error(A1_b, eigenfunctions_exact_b, xspan_b)
-eigenvalue_error_b = 100 * np.abs(A2_b - beta_exact) / beta_exact
+# Error computation for eigenvalues (relative percent error)
+err_vals_a = 100 * np.abs(A2_a - exact_eigenvalues) / exact_eigenvalues
+err_vals_b = 100 * np.abs(A2_b - exact_eigenvalues) / exact_eigenvalues
 
-# Display the errors
-print("Eigenfunction Errors for Part (a):", eigenfunction_error_a)
-print("Eigenvalue Errors for Part (a) (%):", eigenvalue_error_a)
-print("\nEigenfunction Errors for Part (b):", eigenfunction_error_b)
-print("Eigenvalue Errors for Part (b) (%):", eigenvalue_error_b)
+# Display results
+print("Eigenfunction Errors (a):", err_funcs_a)
+print("Eigenfunction Errors (b):", err_funcs_b)
+
+print("Eigenvalue Errors (a):", err_vals_a)
+print("Eigenvalue Errors (b):", err_vals_b)
+
+# Optional: Plotting the exact and numerical eigenfunctions for comparison
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(12, 6))
+for i in range(5):
+    plt.plot(xspan, exact_funcs[:, i], label=f'Exact H_{i}(x)')
+    plt.plot(xspan, A1_a[:, i], '--', label=f'Numerical (a) Mode {i+1}')
+    plt.plot(xspan, A1_b[:, i], ':', label=f'Numerical (b) Mode {i+1}')
+
+plt.legend()
+plt.xlabel('x')
+plt.ylabel('Normalized |ϕ_n(x)|')
+plt.title('Comparison of Exact and Numerical Eigenfunctions')
+plt.show()
