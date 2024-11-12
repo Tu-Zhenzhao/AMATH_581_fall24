@@ -10,8 +10,9 @@ dx = x[1] - x[0]  # Grid spacing in x-direction
 dy = y[1] - y[0]  # Grid spacing in y-direction
 
 # Ensure dx and dy are equal (uniform grid)
-dx = (x[-1] - x[0]) / (n - 1)
+dx = (x[-1] - x[0]) / (n)
 dy = dx
+print("dx = dy = ", dx)
 
 # Step 2: Create the 1D Derivative Matrices with Periodic Boundary Conditions
 
@@ -57,21 +58,28 @@ D_y = D_x.copy()
 I_n = eye(n, format='csr')
 
 # Laplacian operator in 2D (Matrix A1)
-A1 = kron(I_n, Dxx) + kron(Dyy, I_n)
+A1 = kron(I_n, Dxx) + kron(Dyy, I_n).toarray()
 
 # First derivative operator in x-direction (Matrix A2)
-A2 = kron(I_n, D_x)
+A3 = kron(I_n, D_x).toarray()
 
 # First derivative operator in y-direction (Matrix A3)
-A3 = kron(D_y, I_n)
+A2 = kron(D_y, I_n).toarray()
 
 # The matrices A1, A2, and A3 are now ready to use
 
-plt.spy(A1)
-plt.show()
-
-plt.spy(A2)
-plt.show()
-
-plt.spy(A3)
-plt.show()
+#plt.spy(A1)
+#plt.show()
+## print the A1 in matrix form
+#print("matrix A1:")
+#print(A1.toarray())
+#plt.spy(A2)
+#plt.show()
+#print("matrix A2:")
+#print(A2.toarray())
+#
+#plt.spy(A3)
+#plt.show()
+#print("matrix A3:")
+#print(A3.toarray())
+#print(A3.toarray()[0,:])
