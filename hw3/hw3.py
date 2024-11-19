@@ -9,7 +9,7 @@
 # import libraries
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
+from scipy.integrate import odeint, solve_ivp
 
 # initial parameters
 y0 = 0
@@ -42,7 +42,9 @@ for modes in range(5):
     for i in range(1000):
         x0 = [1, np.sqrt(K*4**2-beta)*1]
         # solve the ODE
-        y = odeint(func, x0, xspan, args=(K, beta))
+        #y = odeint(func, x0, xspan, args=(K, beta))
+        sol = solve_ivp(lambda x, y: func(y, x, K, beta), (xspan[0], xspan[-1]), x0, t_eval = xspan)
+        y = sol.y.T
         # check if the solution is converged
 
         err = y[-1,1] + np.sqrt(K*4**2-beta)*y[-1,0]
@@ -438,7 +440,7 @@ for j in range(5):
     # Fixed: Changed xspan to xshoot
     err_psi_a[j] = np.trapz((np.abs(eigvec_a[:, j]) - np.abs(phi[:, j]))**2, xshoot)
     err_psi_b[j] = np.trapz((np.abs(eigvec_b[:, j]) - np.abs(phi[:, j]))**2, xshoot)
-    err_a[j] = 100 * np.abs(eigval_a[j] - (2*j - 1)) / (2*j - 1)  # Fixed: Changed (2*j-1) to (2*j+1)
+    err_a[j] = 100 * np.abs(eigval_a[j] - (2*j + 1)) / (2*j + 1)  # Fixed: Changed (2*j-1) to (2*j+1)
     err_b[j] = 100 * np.abs(eigval_b[j] - (2*j + 1)) / (2*j + 1)  # Fixed: Changed (2*j-1) to (2*j+1)
 
 A10 = err_psi_a
