@@ -8,8 +8,8 @@ n = 64  # Number of grid points
 x_min, x_max = -10, 10  # Spatial domain in x
 y_min, y_max = -10, 10  # Spatial domain in y
 nu = 0.001  # Viscosity
-t_span = (0, 4)  # Time span for integration
-t_eval = np.arange(0, 4.5, 0.5)  # Time evaluation points
+t_span = (0, 10)  # Time span for integration
+t_eval = np.arange(0, 10.5, 0.5)  # Time evaluation points
 
 # Spatial grid
 x = np.linspace(x_min, x_max, n, endpoint=False)
